@@ -1,0 +1,24 @@
+{% extends "calibration/base.html" %}
+{% block content %}
+<div class="card" style="max-width:680px">
+  <h2 style="margin-top:0">สร้างใบสอบเทียบ — เลือกเครื่องมือ</h2>
+  <p>ระบบจะเลือกแบบฟอร์ม (F-MTN-0xx) หรือ "สอบเทียบภายนอก" ให้ตรงกับเครื่องมือเอง</p>
+  <form method="get">
+    <select name="equipment" required>
+      <option value="">— เลือกเครื่องมือ —</option>
+      {% regroup equipment by form_code as groups %}
+      {% for g in groups %}
+        <optgroup label="{{ g.list.0.get_form_code_display }}">
+        {% for e in g.list %}<option value="{{ e.pk }}">{{ e.code }} — {{ e.name }} {{ e.brand_model }} ({{ e.department.code }})</option>{% endfor %}
+        </optgroup>
+      {% endfor %}
+    </select>
+    <p><button type="submit">ถัดไป</button> <a class="btn alt" href="{% url 'dashboard' %}">ยกเลิก</a></p>
+  </form>
+  {% if batch_forms %}
+  <hr style="border:0;border-top:1px solid var(--line)">
+  <p><b>ฟอร์มที่บันทึกหลายเครื่องในใบเดียว</b></p>
+  {% for f in batch_forms %}<a class="btn alt" href="{% url 'record_create' %}?form={{ f.code }}">{{ f.code }} {{ f.title }}</a> {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

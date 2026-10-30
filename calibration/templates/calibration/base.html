@@ -1,0 +1,51 @@
+{% load static %}<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}ระบบสอบเทียบเครื่องมือ{% endblock %}</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#1d2330;--card:#fff;--line:#d9dde4;--pri:#1f5fbf;--ok:#1a7f37;--bad:#c62828;--warn:#b26a00}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--fg:#e8eaee;--card:#1d222a;--line:#343b47;--pri:#6aa3ff;--ok:#56d364;--bad:#ff7b72;--warn:#e3b341}}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Noto Sans Thai",Tahoma,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+header a{color:var(--pri);text-decoration:none}header .sp{flex:1}
+main{max-width:980px;margin:1rem auto;padding:0 1rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:1rem;margin-bottom:1rem;overflow-x:auto}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:.35rem .5rem;text-align:center}
+th{font-weight:600}td.l,th.l{text-align:left}
+input,select,textarea{width:100%;padding:.4rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+td input{min-width:5.5rem;text-align:center}
+.btn,button{display:inline-block;padding:.45rem .9rem;border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:6px;text-decoration:none;cursor:pointer;font:inherit}
+.btn.alt,button.alt{background:transparent;color:var(--pri)}button.bad{background:var(--bad);border-color:var(--bad)}
+.ok{color:var(--ok);font-weight:600}.bad-t{color:var(--bad);font-weight:600}.warn{color:var(--warn);font-weight:600}
+.msg{padding:.5rem .8rem;border-radius:6px;margin-bottom:.5rem;border:1px solid var(--line);background:var(--card)}
+.msg.error{border-color:var(--bad);color:var(--bad)}.msg.success{border-color:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
+label{font-size:.9rem;display:block;margin-bottom:.15rem}.err{color:var(--bad);font-size:.85rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.7rem;text-align:center}
+.kpi b{display:block;font-size:1.8rem;line-height:1.2}.kpi.bad{border-color:var(--bad)}.kpi.warn{border-color:var(--warn)}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.chart{display:flex;gap:4px;align-items:flex-end;height:150px;border-bottom:1px solid var(--line)}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:.75rem}
+.stack{width:70%;display:flex;flex-direction:column;justify-content:flex-end;height:110px}
+.stack i{display:block;width:100%}.stack .d{background:var(--ok)}.stack .t{background:var(--warn)}
+.lab{display:flex;gap:4px;font-size:.75rem;text-align:center}.lab span{flex:1}
+.tag{padding:.05rem .45rem;border-radius:10px;border:1px solid var(--line);font-size:.85rem;white-space:nowrap}
+.tag.done{color:var(--ok);border-color:var(--ok)}.tag.overdue,.tag.never{color:var(--bad);border-color:var(--bad)}.tag.soon{color:var(--warn);border-color:var(--warn)}
+</style></head><body>
+<header>
+  <strong>ระบบสอบเทียบเครื่องมือ</strong>
+  {% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}">Dashboard</a>
+    <a href="{% url 'record_list' %}">ใบสอบเทียบ</a>
+    {% if is_technician %}<a href="{% url 'record_create' %}">+ สร้างใบสอบเทียบ</a>{% endif %}
+    {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
+    <span class="sp"></span><span>{{ user.get_full_name|default:user.username }}</span>
+    <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}<button class="alt" type="submit">ออกจากระบบ</button></form>
+  {% endif %}
+</header>
+<main>
+  {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+  {% block content %}{% endblock %}
+</main></body></html>

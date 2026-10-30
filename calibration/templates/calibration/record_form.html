@@ -1,0 +1,35 @@
+{% extends "calibration/base.html" %}
+{% block content %}
+<form method="post">{% csrf_token %}
+{% for k, v in hidden.items %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+<div class="card"><h2 style="margin-top:0">{{ title }}</h2>
+  {% if equipment %}<p>เครื่องมือ: <b>{{ equipment.code }}</b> — {{ equipment.name }} {{ equipment.brand_model }} ({{ equipment.department.code }})
+     · รอบสอบเทียบทุก {{ equipment.interval_months }} เดือน</p>{% endif %}
+  {{ form.non_field_errors }}
+  <div class="grid">
+    {% for f in form %}{% if f.name != "note" %}
+    <div><label>{{ f.label }}</label>{{ f }}<span class="err">{{ f.errors }}</span>
+      {% if f.help_text %}<small>{{ f.help_text }}</small>{% endif %}</div>
+    {% endif %}{% endfor %}
+  </div>
+  <p><label>{{ form.note.label }}</label>{{ form.note }}</p>
+  {% if formdef.external %}<small>การสอบเทียบภายนอก: เก็บผลจากใบรับรองของห้องปฏิบัติการ ไม่มีตารางค่า</small>{% endif %}
+</div>
+{% for fs in formsets %}
+<div class="card">
+  <h3 style="margin-top:0">{{ fs.title }}</h3>
+  <p style="margin-top:0"><small>{{ fs.formula }} · สูงสุด {{ fs.max_rows }} แถว · ผ่านเมื่อ |ค่าผิดพลาด| ไม่เกินเกณฑ์</small></p>
+  {{ fs.management_form }}{{ fs.non_form_errors }}
+  <table>
+    <tr><th>#</th>{% for label in fs.column_labels %}<th>{{ label }}</th>{% endfor %}{% if fs.can_delete %}<th>ลบ</th>{% endif %}</tr>
+    {% for f in fs %}<tr>
+      <td>{{ forloop.counter }}{% for h in f.hidden_fields %}{{ h }}{% endfor %}</td>
+      {% for field in f.visible_fields %}{% if field.name != "DELETE" %}<td>{{ field }}<span class="err">{{ field.errors }}</span></td>{% endif %}{% endfor %}
+      {% if fs.can_delete %}<td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>{% endif %}
+    </tr>{% endfor %}
+  </table>
+</div>
+{% endfor %}
+<div class="row"><button type="submit">บันทึกร่าง</button><a class="btn alt" href="{% url 'record_list' %}">ยกเลิก</a></div>
+</form>
+{% endblock %}

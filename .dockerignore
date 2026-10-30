@@ -1,0 +1,10 @@
+.env
+certs/
+*.key
+*.pem
+.git
+db.sqlite3
+staticfiles/
+__pycache__/
+*.pyc
+backups/

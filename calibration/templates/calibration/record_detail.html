@@ -1,0 +1,65 @@
+{% extends "calibration/base.html" %}{% load calib %}
+{% block content %}
+<div class="card">
+  <div class="row"><h2 style="margin:0;flex:1">{{ formdef.code }} ใบรายงานการสอบเทียบ{{ formdef.title }}</h2>
+    <strong>{{ record.get_status_display }}</strong></div>
+  <div class="grid" style="margin-top:.75rem">
+    {% if record.equipment %}
+    <div>เครื่องมือ: <b>{{ record.equipment.name }}</b></div>
+    <div>รหัส: <b>{{ record.equipment.code }}</b></div>
+    <div>ยี่ห้อ/รุ่น: {{ record.equipment.brand_model|default:"-" }}</div>
+    <div>S/N: {{ record.equipment.serial_no|default:"-" }}</div>
+    <div>หน่วยงาน: {{ record.equipment.department.name }}</div>
+    <div>รอบสอบเทียบ: ทุก {{ record.equipment.interval_months }} เดือน</div>
+    {% endif %}
+    <div>วันที่: {{ record.cal_date|date:"d/m/Y" }}</div>
+    {% if formdef.external %}
+      <div>ห้องปฏิบัติการ: <b>{{ record.lab_name }}</b></div>
+      <div>เลขที่ใบรับรอง: <b>{{ record.cert_no }}</b></div>
+      <div>ผล: {% if record.overall_pass %}<span class="ok">ผ่าน</span>{% elif record.overall_pass == False %}<span class="bad-t">ไม่ผ่าน</span>{% else %}-{% endif %}</div>
+    {% else %}
+      <div>ผลรวม: {% if record.overall_pass %}<span class="ok">ผ่าน</span>{% elif record.overall_pass == False %}<span class="bad-t">ไม่ผ่าน</span>{% else %}-{% endif %}</div>
+    {% endif %}
+  </div>
+  {% if record.note %}<p>หมายเหตุ: {{ record.note }}</p>{% endif %}
+</div>
+{% for b in blocks %}
+<div class="card">
+  {% if b.show_title %}<h3 style="margin-top:0">{{ b.title }}</h3>{% endif %}
+  <p style="margin-top:0"><small>เกณฑ์ผ่าน ± {{ b.tolerance }} {{ b.unit }} · {{ b.formula }}</small></p>
+  <table>
+    <tr><th>#</th>{% for h in b.headers %}<th>{{ h }}</th>{% endfor %}</tr>
+    {% for cells in b.rows %}<tr><td>{{ forloop.counter }}</td>
+      {% for text, cls in cells %}<td>{% if cls %}<span class="{{ cls }}">{{ text }}</span>{% else %}{{ text }}{% endif %}</td>{% endfor %}
+    </tr>{% empty %}<tr><td colspan="{{ b.headers|length|add:1 }}">ไม่มีข้อมูล</td></tr>{% endfor %}
+  </table>
+</div>
+{% endfor %}
+<div class="card">
+  <div class="grid">
+    <div>ผู้สอบเทียบ: {{ record.calibrator.get_full_name|default:record.calibrator.username }}<br><small>{{ record.submitted_at|date:"d/m/Y H:i"|default:"" }}</small></div>
+    <div>ผู้ทบทวน: {% if record.reviewer %}{{ record.reviewer.get_full_name|default:record.reviewer.username }}{% else %}-{% endif %}<br><small>{{ record.reviewed_at|date:"d/m/Y H:i"|default:"" }}</small></div>
+    <div>ผู้อนุมัติ: {% if record.approver %}{{ record.approver.get_full_name|default:record.approver.username }}{% else %}-{% endif %}<br><small>{{ record.approved_at|date:"d/m/Y H:i"|default:"" }}</small></div>
+  </div>
+</div>
+<div class="card row">
+  {% if can_edit %}<a class="btn alt" href="{% url 'record_edit' record.pk %}">แก้ไข</a>{% endif %}
+  {% for a in actions %}
+    <form method="post" action="{% url 'record_action' record.pk a %}" class="row" style="margin:0">{% csrf_token %}
+      {% if a == "reject" %}<input name="reason" placeholder="เหตุผลที่ส่งกลับ" style="width:200px" required>
+        <button class="bad" type="submit">ส่งกลับแก้ไข</button>
+      {% elif a == "submit" %}<button type="submit">ส่งทบทวน</button>
+      {% elif a == "review" %}<button type="submit">ทบทวนแล้ว</button>
+      {% elif a == "approve" %}<button type="submit">อนุมัติ</button>{% endif %}
+    </form>
+  {% endfor %}
+  <span style="flex:1"></span>
+  {% if can_download %}
+  <a class="btn alt" href="{% url 'record_download' record.pk 'pdf' %}">ดาวน์โหลด PDF</a>
+  <a class="btn alt" href="{% url 'record_download' record.pk 'xlsx' %}">ดาวน์โหลด Excel</a>
+  {% endif %}
+</div>
+<div class="card"><h4 style="margin-top:0">ประวัติการทำงาน</h4>
+  {% for l in logs %}<div><small>{{ l.at|date:"d/m/Y H:i" }} — {{ l.user.username }} — {{ l.action }} {{ l.detail }}</small></div>{% empty %}-{% endfor %}
+</div>
+{% endblock %}

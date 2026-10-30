@@ -1,0 +1,18 @@
+{% extends "calibration/base.html" %}
+{% block content %}
+<div class="card">
+  <div class="row"><h3 style="margin:0;flex:1">ใบรายงานการสอบเทียบ</h3>
+    <form method="get"><select name="status" onchange="this.form.submit()">
+      <option value="">ทุกสถานะ</option>
+      {% for k,v in statuses %}<option value="{{ k }}" {% if k == status %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select></form></div>
+  <table><tr><th>วันที่</th><th>ฟอร์ม</th><th class="l">เครื่องมือ</th><th>ผู้สอบเทียบ</th><th>ผล</th><th>สถานะ</th><th></th></tr>
+  {% for r in records %}<tr>
+    <td>{{ r.cal_date|date:"d/m/Y" }}</td><td>{{ r.form_code }}</td>
+    <td class="l">{% if r.equipment %}{{ r.equipment.code }} - {{ r.equipment.name }}{% else %}{{ r.title_text }}{% endif %}</td>
+    <td>{{ r.calibrator.get_full_name|default:r.calibrator.username }}</td>
+    <td>{% if r.overall_pass %}<span class="ok">ผ่าน</span>{% elif r.overall_pass == False %}<span class="bad-t">ไม่ผ่าน</span>{% else %}-{% endif %}</td>
+    <td>{{ r.get_status_display }}</td><td><a href="{% url 'record_detail' r.pk %}">เปิด</a></td>
+  </tr>{% empty %}<tr><td colspan="7">ยังไม่มีรายการ</td></tr>{% endfor %}</table>
+</div>
+{% endblock %}

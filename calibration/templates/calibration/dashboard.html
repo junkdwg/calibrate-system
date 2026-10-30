@@ -1,0 +1,84 @@
+{% extends "calibration/base.html" %}
+{% block content %}
+<div class="row" style="margin-bottom:1rem">
+  <h2 style="margin:0;flex:1">Dashboard แผนสอบเทียบปี {{ year }}</h2>
+  <form method="get" class="row" style="margin:0">
+    <select name="year" onchange="this.form.submit()" style="width:auto">
+      {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>ปี {{ y }}</option>{% endfor %}
+    </select>
+    <select name="dept" onchange="this.form.submit()" style="width:auto">
+      <option value="">ทุกแผนก</option>
+      {% for d in departments %}<option value="{{ d.code }}" {% if d.code == dept %}selected{% endif %}>{{ d.code }}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>{{ s.total }}</b>รอบที่ต้องสอบเทียบปีนี้<br><small>({{ s.equipment }} เครื่อง)</small></div>
+  <div class="kpi"><b class="ok">{{ s.done }}</b>ทำแล้ว ({{ s.percent }}%)</div>
+  <div class="kpi"><b>{{ s.pending }}</b>รอบที่ยังเหลือ</div>
+  <div class="kpi {% if s.overdue %}bad{% endif %}"><b class="{% if s.overdue %}bad-t{% endif %}">{{ s.overdue }}</b>เกินกำหนด</div>
+  <div class="kpi {% if s.soon %}warn{% endif %}"><b>{{ s.soon }}</b>ใกล้ครบกำหนด</div>
+  <div class="kpi {% if s.never %}bad{% endif %}"><b>{{ s.never }}</b>ยังไม่เคยสอบเทียบ</div>
+</div>
+<div class="card"><div class="bar"><i style="width:{{ s.percent }}%"></i></div>
+  <small>ความคืบหน้า {{ s.done }} / {{ s.total }}</small></div>
+
+{% if wait_review or wait_approve %}
+<div class="card row">
+  <b>งานค้างในขั้นตอนอนุมัติ:</b>
+  <span {% if is_reviewer and wait_review %}class="warn"{% endif %}>รอทบทวน {{ wait_review }}{% if is_reviewer and wait_review %} (รอคุณ){% endif %}</span>
+  <span {% if is_approver and wait_approve %}class="warn"{% endif %}>รออนุมัติ {{ wait_approve }}{% if is_approver and wait_approve %} (รอคุณ){% endif %}</span>
+  <a href="{% url 'record_list' %}">ดูรายการ</a>
+</div>
+{% endif %}
+
+{% if alerts %}
+<div class="card">
+  <h3 style="margin-top:0">แจ้งเตือน</h3>
+  <table><tr><th class="l">เครื่องมือ</th><th>แผนก</th><th>ครบกำหนด</th><th>สถานะ</th></tr>
+  {% for i in alerts %}<tr>
+    <td class="l">{{ i.eq.code }} - {{ i.eq.name }} {{ i.eq.brand_model }}<br><small>ครั้งที่ {{ i.round_no }}/{{ i.rounds_total }} ของปี · ทุก {{ i.eq.interval_months }} เดือน</small></td><td>{{ i.eq.department.code }}</td>
+    <td>{{ i.due|date:"d/m/Y"|default:"-" }}</td>
+    <td><span class="tag {{ i.state }}">{{ i.label }}</span></td>
+  </tr>{% endfor %}</table>
+</div>
+{% endif %}
+
+<div class="card">
+  <h3 style="margin-top:0">จำนวนที่ต้องสอบเทียบรายเดือน</h3>
+  <div class="chart">
+    {% for b in chart %}<div class="col">
+      <span>{% if b.total %}{{ b.total }}{% endif %}</span>
+      <div class="stack"><i class="t" style="height:{{ b.todo_pct }}%"></i><i class="d" style="height:{{ b.done_pct }}%"></i></div>
+    </div>{% endfor %}
+  </div>
+  <div class="lab">{% for b in chart %}<span>{{ b.label }}</span>{% endfor %}</div>
+  <small><span class="ok">■</span> ทำแล้ว &nbsp; <span class="warn">■</span> ยังไม่ทำ &nbsp; "ค้าง" = เลยกำหนดจากปีก่อน/ยังไม่เคยสอบเทียบ</small>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">แยกตามแผนก</h3>
+  <table><tr><th class="l">แผนก</th><th>ทั้งหมด</th><th>ทำแล้ว</th><th>เกินกำหนด/ยังไม่เคย</th></tr>
+  {% for d in depts %}<tr><td class="l">{{ d.code }} {{ d.name }}</td><td>{{ d.total }}</td><td>{{ d.done }}</td>
+    <td>{% if d.overdue %}<span class="bad-t">{{ d.overdue }}</span>{% else %}0{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4">ไม่มีข้อมูล</td></tr>{% endfor %}</table>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">รอบสอบเทียบปี {{ year }} ({{ items|length }} รอบ)</h3>
+  <small>เครื่องที่สอบเทียบถี่กว่า 1 ปี (เช่น ทุก 2/3/6 เดือน) จะมีหลายรอบในปี — "เหลืออีก" คือจำนวนรอบที่ยังต้องทำในปีนี้</small>
+  <table><tr><th>เดือน</th><th class="l">เครื่องมือ</th><th>แผนก</th><th>ฟอร์ม</th><th>ครั้งที่</th><th>สถานะ</th><th>เหลืออีก</th><th></th></tr>
+  {% for i in items %}<tr>
+    <td>{% if i.month %}{{ i.month }}{% else %}-{% endif %}</td>
+    <td class="l">{{ i.eq.code }} - {{ i.eq.name }} {{ i.eq.brand_model }}</td>
+    <td>{{ i.eq.department.code }}</td><td>{{ i.eq.form_code }}</td>
+    <td>{{ i.round_no }}/{{ i.rounds_total }}</td>
+    <td><span class="tag {{ i.state }}">{{ i.label }}</span></td>
+    <td>{% if i.state != "done" %}{{ i.remaining }} ครั้ง{% endif %}</td>
+    <td>{% if i.state == "done" %}<a href="{% url 'record_detail' i.record.pk %}">ดูใบ</a>
+        {% elif is_technician and i.can_start %}<a href="{% url 'record_create' %}?equipment={{ i.eq.pk }}">สอบเทียบ</a>
+        {% elif not i.can_start %}<small>ยังไม่เปิดฟอร์ม</small>{% endif %}</td>
+  </tr>{% empty %}<tr><td colspan="8">ไม่มีรายการ</td></tr>{% endfor %}</table>
+</div>
+{% endblock %}
